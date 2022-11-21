@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">ClearCorpse</string>
+    <string name="accessibility_label">清理🧟‍好友</string>
+    <string name="accessibility_desc">清理微信僵尸🧟‍好友\n\n🦸biu~ biu~ biu~</string>
+    <string name="service_status_disable">😳无障碍服务已关闭，点击熊猫头去开启~</string>
+    <string name="service_status_enable">🤡无障碍服务已开启</string>
+    <string name="service_is_enable_tips">😲无障碍服务已开启！无需重复开启~</string>
+    <string name="service_enable_step_tips">请依次点击：无障碍 > 已下载的应用 > 😁 → 清理🧟‍好友</string>
+    <string name="clear_wx_corpse_friend">去清理wx僵尸好友</string>
+    <string name="retest">重新检测</string>
+    <string name="check_history">检测历史</string>
+</resources>
