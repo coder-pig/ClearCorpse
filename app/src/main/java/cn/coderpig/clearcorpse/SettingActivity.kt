@@ -13,6 +13,20 @@ class SettingActivity : AppCompatActivity() {
     private lateinit var mServiceStatusIv: ImageView
     private lateinit var mServiceStatusTv: TextView
     private lateinit var mToClearBt: Button
+    private val mClickListener = View.OnClickListener {
+        when (it.id) {
+            R.id.iv_service_status -> {
+                if (isAccessibilitySettingsOn(ClearCorpseAccessibilityService::class.java)) {
+                    shortToast(getStringRes(R.string.service_is_enable_tips))
+                } else {
+                    longToast(getStringRes(R.string.service_enable_step_tips))
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                }
+            }
+            R.id.bt_to_clear -> startActivity(Intent(this, ClearWxCorpseActivity::class.java))
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_setting)
@@ -23,17 +37,8 @@ class SettingActivity : AppCompatActivity() {
         mServiceStatusIv = findViewById(R.id.iv_service_status)
         mServiceStatusTv = findViewById(R.id.tv_service_status)
         mToClearBt = findViewById(R.id.bt_to_clear)
-        mServiceStatusIv.setOnClickListener {
-            if (isAccessibilitySettingsOn(ClearCorpseAccessibilityService::class.java)) {
-                shortToast(getStringRes(R.string.service_is_enable_tips))
-            } else {
-                longToast(getStringRes(R.string.service_enable_step_tips))
-                startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            }
-        }
-        mToClearBt.setOnClickListener {
-            startActivity(Intent(this, ClearWxCorpseActivity::class.java))
-        }
+        mServiceStatusIv.setOnClickListener(mClickListener)
+        mToClearBt.setOnClickListener(mClickListener)
     }
 
     override fun onResume() {
@@ -48,4 +53,5 @@ class SettingActivity : AppCompatActivity() {
             mToClearBt.visibility = View.GONE
         }
     }
+
 }

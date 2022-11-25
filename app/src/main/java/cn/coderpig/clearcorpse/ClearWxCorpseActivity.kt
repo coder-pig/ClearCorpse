@@ -20,7 +20,44 @@ import androidx.recyclerview.widget.RecyclerView
  */
 class ClearWxCorpseActivity : AppCompatActivity() {
     private lateinit var mAdapter: FriendAdapter
-    private val mData = ArrayList<String>()
+    private val mData = arrayListOf(
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试",
+        "测试"
+    )
     private lateinit var mReTestBt: Button
     private lateinit var mContentRv: RecyclerView
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,9 +72,10 @@ class ClearWxCorpseActivity : AppCompatActivity() {
         mContentRv.apply {
             layoutManager = LinearLayoutManager(this@ClearWxCorpseActivity)
             mAdapter = FriendAdapter(this@ClearWxCorpseActivity, mData)
+            adapter = mAdapter
         }
         mReTestBt.setOnClickListener {
-            startActivity(Intent(Intent(Intent.ACTION_VIEW, Uri.parse("weixin://"))))
+            startApp("com.tencent.mm", "com.tencent.mm.ui.LauncherUI", "未安装微信")
         }
     }
 }
