@@ -1,11 +1,15 @@
 package cn.coderpig.clearcorpse
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK
+import android.accessibilityservice.GestureDescription
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Path
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
@@ -16,6 +20,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 import java.lang.Exception
 import java.lang.StringBuilder
+import kotlin.math.log
 
 /**
  * @Author CoderPig
@@ -72,11 +77,31 @@ fun Context.shortToast(msg: String) =
 fun Context.longToast(msg: String) =
     Toast.makeText(applicationContext, msg, Toast.LENGTH_LONG).show()
 
-
 const val TAG = "清除微信🧟好友"
+const val SEGMENT_SIZE = 3072
+
 fun logD(content: String) {
-    Log.d(TAG, content)
+    if (content.length < SEGMENT_SIZE) {
+        Log.d(TAG, content)
+        return
+    } else {
+        Log.d(TAG, content.substring(0, SEGMENT_SIZE))
+        logD(content.substring(SEGMENT_SIZE))
+    }
 }
+
+//int segmentSize = 3 * 1024;
+//long length = msg.length();
+//if (length <= segmentSize ) {// 长度小于等于限制直接打印
+//    Log.e(tag, msg);
+//}else {
+//    while (msg.length() > segmentSize ) {// 循环分段打印日志
+//        String logContent = msg.substring(0, segmentSize );
+//        msg = msg.replace(logContent, "");
+//        Log.e(tag, logContent);
+//    }
+//    Log.e(tag, msg);// 打印剩余日志
+//}
 
 
 /**
@@ -168,6 +193,7 @@ fun AccessibilityNodeInfo.getNodeByText(
                 }
             }
             sleep(100)
+            logD("查找组件，第${count + 1}次找不到")
             count++
         }
     }
@@ -217,6 +243,7 @@ fun AccessibilityNodeInfo?.text(): String {
 fun AccessibilityNodeInfo?.click() {
     if (this == null) return
     if (this.isClickable) {
+        sleep(100)
         this.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         return
     } else {
@@ -249,6 +276,34 @@ fun AccessibilityNodeInfo.input(content: String) = performAction(
         putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, content)
     }
 )
+
+fun AccessibilityService.back() {
+    performGlobalAction(GLOBAL_ACTION_BACK)
+}
+
+/**
+ * 利用手势模拟点击
+ * @param node: 需要点击的节点
+ * */
+fun AccessibilityService.gestureClick(node: AccessibilityNodeInfo?) {
+    if (node == null) return
+    val tempRect = Rect()
+    node.getBoundsInScreen(tempRect)
+    val x = ((tempRect.left + tempRect.right) / 2).toFloat()
+    val y = ((tempRect.top + tempRect.bottom) / 2).toFloat()
+    dispatchGesture(
+        GestureDescription.Builder().apply {
+            addStroke(GestureDescription.StrokeDescription(Path().apply { moveTo(x, y) }, 0L, 200L))
+        }.build(),
+        object : AccessibilityService.GestureResultCallback() {
+            override fun onCompleted(gestureDescription: GestureDescription?) {
+                super.onCompleted(gestureDescription)
+                logD("手势点击完成: 【$x - $y】")
+            }
+        },
+        null
+    )
+}
 
 fun sleep(millisecond: Long) {
     Thread.sleep((millisecond))
@@ -285,4 +340,4 @@ fun AccessibilityNodeInfo?.fullPrintNode(
 }
 
 const val WX_PKG_NAME = "com.tencent.mm"
-fun wxNodeId(id: String)  = "$WX_PKG_NAME:id/$id"
+fun wxNodeId(id: String) = "$WX_PKG_NAME:id/$id"

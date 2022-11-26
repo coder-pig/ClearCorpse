@@ -17,25 +17,65 @@ class ClearCorpseAccessibilityService : AccessibilityService() {
     companion object {
         const val LAUNCHER_UI = "com.tencent.mm.ui.LauncherUI"  // 首页
         const val CONTACT_INFO_UI = "com.tencent.mm.plugin.profile.ui.ContactInfoUI"    // 联系人信息
+        const val CHATTING_UI = "com.tencent.mm.ui.chatting.ChattingUI"    // 聊天页
         const val REMITTANCE_UI = "com.tencent.mm.plugin.remittance.ui.RemittanceUI" // 转账
-        const val PAY_DIALOG = "com.tencent.mm.ui.widget.dialog.j" // 支付对 话框，text=微信支付
         const val NO_FRIEND_DIALOG = "com.tencent.mm.ui.widget.dialog.f"   // 非好友对话框
 
         // 非还有对话框，text=你不是收款方好友，对方添加你为好友后才能发起转账, 我知道了
         const val CONTACT_LIST_ID = "js"
         const val CONTACT_ITEM_ID = "hg4"
-
+        const val CONTACT_WX_NAME = "bq1"
+        const val CHATTING_MORE_ID = "b3q"
+        const val REMITTANCE_NICKNAME_ID = "inh"
+        const val REMITTANCE_EDIT_ID = "lg_"
+        const val REMITTANCE_CLICK_ID = "ffp"
     }
 
-//    private var mContactTempMap = hashMapOf<String, Contact>()
-//    private var mCurContact: Contact? = null
+    private var mCurContact: Contact? = null
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
+//        logD("$event")
         when (event.eventType) {
             TYPE_WINDOW_STATE_CHANGED -> {
                 when (event.className.toString()) {
                     LAUNCHER_UI -> {
                         event.source?.let { source -> source.getNodeByText("通讯录").click() }
+                    }
+                    CONTACT_INFO_UI -> {
+                        event.source?.let { source ->
+                            mCurContact!!.wxName = source.getNodeByText(wxNodeId(CONTACT_WX_NAME)).text()
+                            mCurContact!!.wxNum = source.getNodeByText("微信号").text().replace("微信号:", "").trim()
+                            gestureClick(source.getNodeByText("发消息")?.parent)
+                        }
+                    }
+                    REMITTANCE_UI -> {
+                        event.source?.let { source ->
+                            sleep(200)
+                            val nickName = source.getNodeById(wxNodeId(REMITTANCE_NICKNAME_ID))
+                            if (nickName != null) {
+                                if (nickName.text().indexOf("(") != -1 && nickName.text().indexOf(")") != -1) {
+                                    logD("好友关系正常")
+                                    repeat(5) {
+                                        back()
+                                        sleep(500)
+                                    }
+                                } else {
+                                    logD("好友关系异常，假转账法确认关系")
+                                    source.getNodeById(wxNodeId(REMITTANCE_EDIT_ID))?.input("0.01")
+                                    source.getNodeById(wxNodeId(REMITTANCE_CLICK_ID))?.click()
+                                }
+                            }
+                        }
+                    }
+                    NO_FRIEND_DIALOG -> {
+                        event.source?.let { source ->
+                            logD("好友关系：${event.text}")
+                            source.getNodeByText("我知道了").click()
+                            repeat(3) {
+                                back()
+                                sleep(500)
+                            }
+                        }
                     }
                 }
             }
@@ -45,12 +85,38 @@ class ClearCorpseAccessibilityService : AccessibilityService() {
                     rootInActiveWindow?.let { source ->
                         val contactList = source.getNodeById(wxNodeId(CONTACT_LIST_ID))
                         if (contactList != null) {
-                            contactList.getNodeById(wxNodeId(CONTACT_ITEM_ID)).click()
+                            if (mCurContact == null) {
+                                mCurContact = Contact()
+                                contactList.getNodesById(wxNodeId(CONTACT_ITEM_ID))?.get(0).click()
+                            } else {
+                                val contactNodes = contactList.getNodesById(wxNodeId(CONTACT_ITEM_ID))
+                                contactNodes?.forEachIndexed { index, node ->
+                                    if (node.text() ==  mCurContact!!.wxName) {
+                                        if (index + 1 >= contactNodes.size) {
+                                            contactList.scrollBackward()
+                                        } else {
+
+                                        }
+                                        contactList.getNodesById(wxNodeId(CONTACT_ITEM_ID))?.get(index + 1).click()
+                                    }
+                                }
+                            }
                         } else {
                             logD("未能获取好友列表")
                         }
                     }
-
+                }
+                if (event.text[0] == "发消息") {
+                    sleep(200)
+                    rootInActiveWindow?.let { source ->
+                        source.getNodeById(wxNodeId(CHATTING_MORE_ID)).click()
+                    }
+                }
+                if (event.text[0] == "更多功能按钮，已折叠") {
+                    sleep(100)
+                    rootInActiveWindow?.let { source ->
+                        gestureClick(source.getNodeByText("转账")?.parent)
+                    }
                 }
             }
             else -> logD("$event")
@@ -58,69 +124,14 @@ class ClearCorpseAccessibilityService : AccessibilityService() {
     }
 
 
-//                        source.getNodeById(CONTACT_LIST_ID)?.apply {
-//                            getNodesById(CONTACT_ITEM_ID).forEach {
-//                                it.click()
-//                            }
-//                        }
-//                CONTACT_INFO_UI -> {
-//                    fullPrintNode("联系人信息页", event.source)
-//                    event.source?.let { source ->
-//                        mCurContact = Contact()
-//                        mCurContact!!.nickName = source.getNodeById(CONTACT_INFO_NICKNAME_ID).text()
-//                        mCurContact!!.wxNum =
-//                            source.getNodeById(CONTACT_INFO_WX_NO_ID).text().replace("微信号:  ", "")
-//                        source.getNodeByText("发消息")?.parent?.click()
-//                        sleep(1)
-//                        rootInActiveWindow.apply { getNodeById(CHATTING_MORE_ID).click(); recycle() }
-//                        sleep(1)
-//                        fullPrintNode("聊天页", rootInActiveWindow)
-//                        rootInActiveWindow.apply { getNodeByText("转账").click(); recycle() }
-//                    }
-//                }
-//                REMITTANCE_UI -> {
-//                    fullPrintNode("转账页", event.source)
-//                }
-//                PAY_DIALOG -> {
-//                    fullPrintNode("支付对话框", event.source)
-//                }
-//                NO_FRIEND_DIALOG -> {
-//                    fullPrintNode("非好友对话框", event.source)
-//                }
-//            }
-//        } else {
-//            logD("$event")
-//            fullPrintNode("其他：", event.source)
-//        }
-
-
-    // 遍历所有结点的方法
-    private fun fullPrintNode(
-        tag: String,
-        parentNode: AccessibilityNodeInfo?,
-        spaceCount: Int = 0
-    ): AccessibilityNodeInfo? {
-        if (parentNode == null) return null
-        val spaceSb = StringBuilder().apply { repeat(spaceCount) { append("  ") } }
-        logD("$tag: $spaceSb${parentNode.text} → ${parentNode.viewIdResourceName} → ${parentNode.className} → Clickable: ${parentNode.isClickable}")
-        if (parentNode.childCount == 0) return null
-        for (i in 0 until parentNode.childCount) {
-            fullPrintNode(tag, parentNode.getChild(i), spaceCount + 1)
-        }
-        return null
-    }
-
     override fun onInterrupt() {
     }
 
 
     data class Contact(
-        var nickName: String? = null,
+        var wxName: String? = null,
         var wxNum: String? = null,
-        var status: RelationStatus? = RelationStatus.NORMAL,
+        var status: String? = null
     )
 
-    enum class RelationStatus {
-        NORMAL, DELETED, BLACKLIST
-    }
 }
